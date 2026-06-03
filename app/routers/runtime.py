@@ -18,17 +18,17 @@ _runtime_state = {
 @router.get("/runtime/status")
 def get_runtime_status(request: Request):
     trace_id = request.state.trace_id
-    return ok(data=_runtime_state, trace_id=trace_id)
+    return ok(_runtime_state, trace_id=trace_id)
 
 
 @router.post("/runtime/microphone/toggle")
 def toggle_microphone(request: Request):
     trace_id = request.state.trace_id
-    return ok(data={"microphone": "toggled", "status": "ok"}, trace_id=trace_id)
+    return ok({"microphone": "toggled", "status": "ok"}, trace_id=trace_id)
 
 
 @router.post("/runtime/clear-queue")
 def clear_queue(request: Request):
     trace_id = request.state.trace_id
     _runtime_state["queueLength"] = 0
-    return ok(data={"queue": "cleared", "queueLength": 0}, trace_id=trace_id)
+    return ok({"queue": "cleared", "queueLength": 0}, trace_id=trace_id)

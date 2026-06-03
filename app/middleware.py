@@ -33,16 +33,13 @@ async def admin_auth_middleware(request: Request, call_next):
     if request.url.path in ("/health", "/docs", "/redoc", "/openapi.json"):
         return await call_next(request)
 
-    token = request.headers.get("x-admin-token")
-    if token != settings.ADMIN_TOKEN:
+    from app.schemas.common import err
+
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer ") or auth[7:] != settings.ADMIN_TOKEN:
+        trace_id = getattr(request.state, "trace_id", "unknown")
         return JSONResponse(
             status_code=401,
-            content={
-                "success": False,
-                "code": "AUTH_INVALID",
-                "error": {"type": "AUTH", "message": "管理 token 无效", "detail": None},
-                "traceId": getattr(request.state, "trace_id", "unknown"),
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            },
+            content=err(40100, "管理 token 无效", trace_id),
         )
     return await call_next(request)

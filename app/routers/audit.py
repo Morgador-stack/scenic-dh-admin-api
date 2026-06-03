@@ -14,13 +14,13 @@ router = APIRouter(tags=["Audit"])
 def list_sessions(date_range: str = Query(None), status: str = Query(None), request: Request = None):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "items": [
                 {"id": "550e8400-...", "profile": {"language": "zh"}, "source": "miniprogram", "status": "active", "createdAt": "2026-06-02T09:00:00Z"},
             ],
             "total": 1,
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
@@ -28,7 +28,7 @@ def list_sessions(date_range: str = Query(None), status: str = Query(None), requ
 def get_session_detail(session_id: str, request: Request):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "id": session_id,
             "profile": {"language": "zh", "interests": ["佛教文化"]},
             "status": "active",
@@ -39,7 +39,7 @@ def get_session_detail(session_id: str, request: Request):
             "events": [],
             "feedback": [],
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
@@ -47,18 +47,18 @@ def get_session_detail(session_id: str, request: Request):
 def list_messages(date_range: str = Query(None), fallback: bool = Query(None), request: Request = None):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "items": [
                 {"id": "MSG-001", "sessionId": "550e8400-...", "role": "user", "text": "灵山大佛有多高？", "fallback": False, "createdAt": "2026-06-02T10:00:00Z"},
                 {"id": "MSG-002", "sessionId": "550e8400-...", "role": "assistant", "text": "灵山大佛高88米...", "fallback": False, "createdAt": "2026-06-02T10:00:01Z"},
             ],
             "total": 2,
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
 @router.post("/messages/{message_id}/adopt")
 def adopt_message(message_id: str, request: Request):
     trace_id = request.state.trace_id
-    return ok(data={"messageId": message_id, "adopted": True, "category": "faq_candidate"}, trace_id=trace_id)
+    return ok({"messageId": message_id, "adopted": True, "category": "faq_candidate"}, trace_id=trace_id)

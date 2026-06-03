@@ -127,7 +127,7 @@ def list_data_gaps(priority: str = None, status: str = None, request: Request = 
     if status:
         gaps = [g for g in gaps if g["status"] == status]
     return ok(
-        data={
+        {
             "items": gaps,
             "total": len(gaps),
             "summary": {
@@ -138,7 +138,7 @@ def list_data_gaps(priority: str = None, status: str = None, request: Request = 
                 "pending": len([g for g in _GAPS if g["status"] in ("pending", "mock", "manual_seed")]),
             },
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
@@ -151,6 +151,6 @@ def update_gap(gap_id: str, body: GapUpdateRequest, request: Request):
                 g["status"] = body.status
             if body.mockStrategy is not None:
                 g["mockStrategy"] = body.mockStrategy
-            return ok(data=g, trace_id=trace_id)
+            return ok(g, trace_id=trace_id)
     from app.schemas.common import err
-    return err("NOT_FOUND", "NOT_FOUND", f"缺口 {gap_id} 不存在", trace_id)
+    return err(40400, f"缺口 {gap_id} 不存在", trace_id)

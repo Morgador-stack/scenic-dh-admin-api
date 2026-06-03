@@ -47,8 +47,8 @@ def get_persona(persona_id: str, request: Request):
     trace_id = request.state.trace_id
     persona = _PERSONAS.get(persona_id)
     if not persona:
-        return err("NOT_FOUND", "NOT_FOUND", f"人设 {persona_id} 不存在", trace_id)
-    return ok(data=persona, trace_id=trace_id)
+        return err(40400, f"人设 {persona_id} 不存在", trace_id)
+    return ok(persona, trace_id=trace_id)
 
 
 @router.put("/personas/{persona_id}")
@@ -56,7 +56,7 @@ def update_persona(persona_id: str, body: PersonaUpdateRequest, request: Request
     trace_id = request.state.trace_id
     persona = _PERSONAS.get(persona_id)
     if not persona:
-        return err("NOT_FOUND", "NOT_FOUND", f"人设 {persona_id} 不存在", trace_id)
+        return err(40400, f"人设 {persona_id} 不存在", trace_id)
     if body.name is not None:
         persona["name"] = body.name
     if body.description is not None:
@@ -66,4 +66,4 @@ def update_persona(persona_id: str, body: PersonaUpdateRequest, request: Request
     if body.fallbackPolicy is not None:
         persona["fallbackPolicy"] = body.fallbackPolicy
     _PERSONAS[persona_id] = persona
-    return ok(data=persona, trace_id=trace_id)
+    return ok(persona, trace_id=trace_id)

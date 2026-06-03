@@ -34,10 +34,10 @@ def create_broadcast(body: BroadcastRequest, request: Request):
         "status": "queued",
     }
     _BROADCASTS.append(bc)
-    return ok(data={"broadcastId": broadcast_id, "queueState": "queued"}, trace_id=trace_id)
+    return ok({"broadcastId": broadcast_id, "queueState": "queued"}, trace_id=trace_id)
 
 
 @router.get("/broadcasts")
 def list_broadcasts(request: Request):
     trace_id = request.state.trace_id
-    return ok(data={"items": _BROADCASTS}, trace_id=trace_id)
+    return ok({"items": _BROADCASTS}, trace_id=trace_id)

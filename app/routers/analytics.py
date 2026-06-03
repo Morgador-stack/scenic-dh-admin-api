@@ -11,7 +11,7 @@ router = APIRouter(tags=["Analytics"])
 def get_overview(date_range: str = Query(None), request: Request = None):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "activeSessions": 42,
             "totalMessages": 1280,
             "avgRating": 4.3,
@@ -19,7 +19,7 @@ def get_overview(date_range: str = Query(None), request: Request = None):
             "ragHitRate": 0.88,
             "avatarUptime": 0.997,
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
@@ -27,7 +27,7 @@ def get_overview(date_range: str = Query(None), request: Request = None):
 def get_hot_questions(date_range: str = Query(None), request: Request = None):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "items": [
                 {"question": "灵山大佛有多高", "count": 145, "avgConfidence": 0.92},
                 {"question": "九龙灌浴表演时间", "count": 98, "avgConfidence": 0.88},
@@ -36,7 +36,7 @@ def get_hot_questions(date_range: str = Query(None), request: Request = None):
                 {"question": "怎么从无锡市区到灵山", "count": 65, "avgConfidence": 0.45},
             ]
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
@@ -44,7 +44,7 @@ def get_hot_questions(date_range: str = Query(None), request: Request = None):
 def get_rag_analytics(date_range: str = Query(None), request: Request = None):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "hitRate": 0.88,
             "fallbackRate": 0.12,
             "avgLatencyMs": 320,
@@ -55,7 +55,7 @@ def get_rag_analytics(date_range: str = Query(None), request: Request = None):
                 {"reason": "timeout", "count": 8},
             ],
         },
-        trace_id=trace_id,
+        trace_id,
     )
 
 
@@ -63,12 +63,12 @@ def get_rag_analytics(date_range: str = Query(None), request: Request = None):
 def get_avatar_analytics(date_range: str = Query(None), request: Request = None):
     trace_id = request.state.trace_id
     return ok(
-        data={
+        {
             "speechCount": 1150,
             "failures": 15,
             "avgSpeechDurationMs": 8000,
             "avgQueueLength": 2.1,
             "uptime": "99.7%",
         },
-        trace_id=trace_id,
+        trace_id,
     )

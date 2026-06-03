@@ -6,7 +6,7 @@ from app.config import settings
 
 client = TestClient(app)
 
-AUTH = {"x-admin-token": settings.ADMIN_TOKEN}
+AUTH = {"Authorization": f"Bearer {settings.ADMIN_TOKEN}"}
 
 
 def test_health():
@@ -28,7 +28,7 @@ def test_auth_valid():
 def test_knowledge_status():
     resp = client.get("/v1/knowledge/status", headers=AUTH)
     data = resp.json()
-    assert data["success"]
+    assert data["code"] == 0
     assert data["data"]["documents"] == 2
 
 
@@ -40,13 +40,13 @@ def test_persona_get():
 
 def test_persona_not_found():
     resp = client.get("/v1/personas/P99", headers=AUTH)
-    assert resp.json()["code"] == "NOT_FOUND"
+    assert resp.json()["code"] == 40400
 
 
 def test_create_broadcast():
     resp = client.post("/v1/broadcasts", headers=AUTH, json={"text": "测试播报", "priority": "high"})
     data = resp.json()
-    assert data["success"]
+    assert data["code"] == 0
     assert "broadcastId" in data["data"]
 
 

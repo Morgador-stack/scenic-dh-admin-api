@@ -32,16 +32,16 @@ class ReindexRequest(BaseModel):
 @router.get("/knowledge/status")
 def get_knowledge_status(scenic_id: str = None, request: Request = None):
     trace_id = request.state.trace_id
-    return ok(data=_knowledge_state, trace_id=trace_id)
+    return ok(_knowledge_state, trace_id=trace_id)
 
 
 @router.post("/knowledge/sources")
 def register_source(body: SourceRequest, request: Request):
     trace_id = request.state.trace_id
-    return ok(data={"sourceId": f"SRC-{body.scenicId}-{body.sourceName}", "status": "registered"}, trace_id=trace_id)
+    return ok({"sourceId": f"SRC-{body.scenicId}-{body.sourceName}", "status": "registered"}, trace_id=trace_id)
 
 
 @router.post("/knowledge/reindex")
 def trigger_reindex(body: ReindexRequest, request: Request):
     trace_id = request.state.trace_id
-    return ok(data={"jobId": f"REINDEX-{body.scenicId}-1", "status": "started"}, trace_id=trace_id)
+    return ok({"jobId": f"REINDEX-{body.scenicId}-1", "status": "started"}, trace_id=trace_id)
