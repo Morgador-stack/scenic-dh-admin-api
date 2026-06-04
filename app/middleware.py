@@ -14,16 +14,31 @@ logger = logging.getLogger("admin-api")
 
 class TraceMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        trace_id = request.headers.get("x-trace-id", str(uuid.uuid4()))
+        trace_id = request.headers.get("x-trace-id", f"trace_{uuid.uuid4().hex}")
+        span_id = str(uuid.uuid4())[:8]
+
         request.state.trace_id = trace_id
+        request.state.span_id = span_id
 
         start = time.perf_counter()
         response = await call_next(request)
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         response.headers["x-trace-id"] = trace_id
+        response.headers["x-span-id"] = span_id
         response.headers["x-service"] = settings.SERVICE_NAME
         response.headers["x-elapsed-ms"] = f"{elapsed_ms:.1f}"
+
+        logger.info(
+            "request",
+            extra={
+                "trace_id": trace_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status": response.status_code,
+                "elapsed_ms": round(elapsed_ms, 2),
+            },
+        )
         return response
 
 

@@ -30,6 +30,7 @@ app = FastAPI(
     version=settings.SERVICE_VERSION,
     description="运营管理接口 — 知识库、人设、播报、审计、分析、运行控制",
     docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
@@ -42,7 +43,7 @@ app.middleware("http")(admin_auth_middleware)
 def health():
     from app.schemas.common import ok
     from fastapi import Request
-    trace_id = "startup"
+    trace_id = "startup-check"
     return ok(
         {"status": "ok", "version": settings.SERVICE_VERSION, "dependencies": {"business_api": settings.BUSINESS_API_URL}},
         trace_id,
