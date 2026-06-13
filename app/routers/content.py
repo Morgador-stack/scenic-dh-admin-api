@@ -278,21 +278,63 @@ def publish_ticket_product(product_id: str, request: Request):
         return err(40404, f"票务产品 {product_id} 不存在", trace_id)
     return ok(_publish(_TICKET_PRODUCTS, product_id), trace_id)
 
-# ═══ 审批流（通用，覆盖 5 类内容） ═══
+# ═══ 路线配置 ═══
+
+class RouteData(BaseModel):
+    name: str
+    type: str = "casual"
+    duration: str = "4小时"
+    nodes: list[str] | None = []
+    difficulty: str = "easy"
+    tags: list[str] | None = []
+    description: str | None = None
+
+
+@router.get("/content/routes")
+def list_routes(request: Request, status: str | None = None):
+    trace_id = request.state.trace_id
+    items = list(_ROUTES.values())
+    if status: items = [i for i in items if i["status"] == status]
+    return ok({"items": items, "total": len(items)}, trace_id)
+
+
+@router.post("/content/routes")
+def create_route(data: RouteData, request: Request):
+    trace_id = request.state.trace_id
+    _COUNTERS["route"] += 1
+    rid = f"ROUTE-{_COUNTERS['route']:03d}"
+    return ok(_create(_ROUTES, rid, data.model_dump(), "ROUTE", "route"), trace_id)
+
+
+@router.put("/content/routes/{route_id}")
+def update_route(route_id: str, data: RouteData, request: Request):
+    trace_id = request.state.trace_id
+    if route_id not in _ROUTES: return err(40404, f"路线 {route_id} 不存在", trace_id)
+    return ok(_update(_ROUTES, route_id, data.model_dump()), trace_id)
+
+
+@router.post("/content/routes/{route_id}/publish")
+def publish_route(route_id: str, request: Request):
+    trace_id = request.state.trace_id
+    if route_id not in _ROUTES: return err(40404, f"路线 {route_id} 不存在", trace_id)
+    return ok(_publish(_ROUTES, route_id), trace_id)
+
+
+# ═══ 审批流（通用，覆盖 6 类内容） ═══
 
 @router.get("/content/pending-review")
 def list_pending_review(request: Request):
     """所有待审核内容"""
     trace_id = request.state.trace_id
     pending = []
-    for store, label in [(_SPOTS, "景点"), (_NOTICES, "公告"), (_EVENTS, "活动"), (_SERVICES, "服务"), (_TICKET_PRODUCTS, "票务")]:
+    for store, label in [(_SPOTS, "景点"), (_ROUTES, "路线"), (_NOTICES, "公告"), (_EVENTS, "活动"), (_SERVICES, "服务"), (_TICKET_PRODUCTS, "票务")]:
         for item in store.values():
             if item.get("status") == "pending_review":
                 pending.append({"type": label, "id": item["id"], "name": item.get("name") or item.get("title") or "", "status": "pending_review", "updatedAt": item.get("updatedAt", "")})
     return ok({"items": pending, "total": len(pending)}, trace_id)
 
 
-_store_map = {"spots": _SPOTS, "notices": _NOTICES, "events": _EVENTS, "services": _SERVICES, "ticket-products": _TICKET_PRODUCTS}
+_store_map = {"spots": _SPOTS, "routes": _ROUTES, "notices": _NOTICES, "events": _EVENTS, "services": _SERVICES, "ticket-products": _TICKET_PRODUCTS}
 
 
 @router.post("/content/{content_type}/{item_id}/submit-review")
