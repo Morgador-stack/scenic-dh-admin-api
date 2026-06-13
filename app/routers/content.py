@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Request, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.common import ok, err
 
@@ -56,8 +56,8 @@ def _withdraw(store: dict, item_id: str) -> dict:
 
 class SpotData(BaseModel):
     name: str
-    lat: float
-    lng: float
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
     category: str = "景点"
     description: str | None = None
     guideText: str | None = None
@@ -75,19 +75,19 @@ class EventData(BaseModel):
     time: str
     location: str
     description: str | None = None
-    capacity: int = 100
+    capacity: int = Field(default=100, ge=1, le=100000)
 
 class ServiceData(BaseModel):
     name: str
     type: str
-    lat: float
-    lng: float
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
     hours: str = "08:00-18:00"
     phone: str | None = None
 
 class TicketProductData(BaseModel):
     name: str
-    price: float
+    price: float = Field(ge=0)
     applicableCrowd: str
     officialUrl: str
 

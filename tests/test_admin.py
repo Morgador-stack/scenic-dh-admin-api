@@ -200,3 +200,18 @@ def test_approval_reject():
     r2 = client.post(f"/v1/content/notices/{nid}/reject?reason=内容不完整", headers=AUTH)
     assert r2.json()["data"]["status"] == "draft"
     assert r2.json()["data"]["rejectionReason"] == "内容不完整"
+
+def test_content_negative_price():
+    """票价不能为负"""
+    resp = client.post("/v1/content/ticket-products", headers=AUTH, json={
+        "name": "负价票", "price": -50.0, "applicableCrowd": "成人", "officialUrl": "https://test.com"
+    })
+    assert resp.status_code == 422
+
+
+def test_content_invalid_coordinates():
+    """坐标范围校验"""
+    resp = client.post("/v1/content/spots", headers=AUTH, json={
+        "name": "无效坐标", "lat": 999.0, "lng": 0
+    })
+    assert resp.status_code == 422

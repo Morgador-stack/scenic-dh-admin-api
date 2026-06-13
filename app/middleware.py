@@ -45,7 +45,10 @@ class TraceMiddleware(BaseHTTPMiddleware):
 async def admin_auth_middleware(request: Request, call_next):
     """管理端鉴权。MVP 阶段使用固定 token 占位。"""
     # health 端点不需要鉴权
-    if request.url.path in ("/health", "/docs", "/redoc", "/openapi.json") or request.url.path.startswith("/v1/auth/login") or request.url.path.startswith("/v1/auth/refresh"):
+    PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+    PUBLIC_PREFIXES = ("/v1/auth/login", "/v1/auth/refresh")
+    path = request.url.path.rstrip("/")
+    if path in PUBLIC_PATHS or path.startswith(PUBLIC_PREFIXES):
         return await call_next(request)
 
     from app.schemas.common import err
