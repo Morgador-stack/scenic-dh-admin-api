@@ -136,6 +136,13 @@ def withdraw_spot(spot_id: str, request: Request):
         return err(40404, f"景点 {spot_id} 不存在", trace_id)
     return ok(_withdraw(_SPOTS, spot_id), trace_id)
 
+@router.delete("/content/spots/{spot_id}")
+def delete_spot(spot_id: str, request: Request):
+    trace_id = request.state.trace_id
+    if spot_id not in _SPOTS: return err(40404, f"景点 {spot_id} 不存在", trace_id)
+    del _SPOTS[spot_id]
+    return ok({"deleted": spot_id}, trace_id)
+
 
 # ═══ 公告 ═══
 
@@ -382,3 +389,30 @@ def reject_content(content_type: str, item_id: str, reason: str = "", request: R
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     item["status"] = "draft"; item["rejectedAt"] = now; item["rejectionReason"] = reason; item["updatedAt"] = now
     return ok(item, trace_id)
+
+# ═══ 排队叫号（运营端控制队列状态） ═══
+
+@router.post("/content/queues/{ticket_id}/call")
+def call_queue_number(ticket_id: str, request: Request):
+    """后台叫号 — 将排队票状态改为 called，模拟真实叫号"""
+    trace_id = request.state.trace_id
+    from app.schemas.common import err
+    # 通过 business-api 的共享内存无法直连，此处用本地模拟队列状态
+    return err(50100, "需要连接 business-api 队列数据库。MVP 阶段请通过 business-api 直接操作。", trace_id)
+
+
+# 实际实现：admin-api 通过 HTTP 调用 business-api 的队列取消/状态变更
+# 详细见 H-06 交接文档中的服务间调用规范
+
+@router.delete("/content/{content_type}/{item_id}")
+def delete_content(content_type: str, item_id: str, request: Request):
+    """通用删除 — 覆盖景点/路线/公告/活动/服务/票务"""
+    trace_id = request.state.trace_id
+    store = _store_map.get(content_type)
+    if not store: return err(40001, f"无效内容类型: {content_type}", trace_id)
+    item = store.get(item_id)
+    if not item: return err(40404, f"{item_id} 不存在", trace_id)
+    if item.get("status") == "published":
+        return err(40001, "已发布内容不可直接删除，请先撤回", trace_id)
+    del store[item_id]
+    return ok({"deleted": item_id, "type": content_type}, trace_id)

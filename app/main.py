@@ -43,10 +43,16 @@ app.middleware("http")(admin_auth_middleware)
 def health():
     from app.schemas.common import ok
     trace_id = "startup-check"
-    return ok(
-        {"status": "ok", "version": settings.SERVICE_VERSION, "dependencies": {"business_api": settings.BUSINESS_API_URL}},
-        trace_id,
-    )
+    return ok({
+        "status": "ok",
+        "version": settings.SERVICE_VERSION,
+        "dependencies": {
+            "business_api": settings.BUSINESS_API_URL,
+            "rag_service": settings.RAG_SERVICE_URL,
+            "fay_runtime": settings.FAY_RUNTIME_URL,
+        },
+        "liveness": True,
+    }, trace_id)
 
 
 # Routers — 原有
