@@ -277,3 +277,66 @@ def publish_ticket_product(product_id: str, request: Request):
     if product_id not in _TICKET_PRODUCTS:
         return err(40404, f"票务产品 {product_id} 不存在", trace_id)
     return ok(_publish(_TICKET_PRODUCTS, product_id), trace_id)
+
+# ═══ 审批流（通用，覆盖 5 类内容） ═══
+
+@router.get("/content/pending-review")
+def list_pending_review(request: Request):
+    """所有待审核内容"""
+    trace_id = request.state.trace_id
+    pending = []
+    for store, label in [(_SPOTS, "景点"), (_NOTICES, "公告"), (_EVENTS, "活动"), (_SERVICES, "服务"), (_TICKET_PRODUCTS, "票务")]:
+        for item in store.values():
+            if item.get("status") == "pending_review":
+                pending.append({"type": label, "id": item["id"], "name": item.get("name") or item.get("title") or "", "status": "pending_review", "updatedAt": item.get("updatedAt", "")})
+    return ok({"items": pending, "total": len(pending)}, trace_id)
+
+
+_store_map = {"spots": _SPOTS, "notices": _NOTICES, "events": _EVENTS, "services": _SERVICES, "ticket-products": _TICKET_PRODUCTS}
+
+
+@router.post("/content/{content_type}/{item_id}/submit-review")
+def submit_review(content_type: str, item_id: str, request: Request):
+    """提交审核"""
+    trace_id = request.state.trace_id
+    store = _store_map.get(content_type)
+    if not store:
+        return err(40001, f"无效内容类型: {content_type}", trace_id)
+    item = store.get(item_id)
+    if not item:
+        return err(40404, f"{item_id} 不存在", trace_id)
+    if item["status"] != "draft":
+        return err(40001, f"只有草稿可提交审核，当前: {item['status']}", trace_id)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    item["status"] = "pending_review"; item["submittedAt"] = now; item["updatedAt"] = now
+    return ok(item, trace_id)
+
+
+@router.post("/content/{content_type}/{item_id}/approve")
+def approve_content(content_type: str, item_id: str, request: Request):
+    """审核通过"""
+    trace_id = request.state.trace_id
+    store = _store_map.get(content_type)
+    if not store: return err(40001, f"无效内容类型: {content_type}", trace_id)
+    item = store.get(item_id)
+    if not item: return err(40404, f"{item_id} 不存在", trace_id)
+    if item["status"] != "pending_review":
+        return err(40001, f"只有待审核可批准，当前: {item['status']}", trace_id)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    item["status"] = "published"; item["approvedAt"] = now; item["publishedAt"] = now; item["updatedAt"] = now
+    return ok(item, trace_id)
+
+
+@router.post("/content/{content_type}/{item_id}/reject")
+def reject_content(content_type: str, item_id: str, reason: str = "", request: Request = None):
+    """审核驳回"""
+    trace_id = request.state.trace_id
+    store = _store_map.get(content_type)
+    if not store: return err(40001, f"无效内容类型: {content_type}", trace_id)
+    item = store.get(item_id)
+    if not item: return err(40404, f"{item_id} 不存在", trace_id)
+    if item["status"] != "pending_review":
+        return err(40001, f"只有待审核可驳回，当前: {item['status']}", trace_id)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    item["status"] = "draft"; item["rejectedAt"] = now; item["rejectionReason"] = reason; item["updatedAt"] = now
+    return ok(item, trace_id)

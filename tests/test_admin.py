@@ -174,3 +174,29 @@ def test_work_orders_admin():
     resp = client.get("/v1/admin/work-orders", headers=AUTH)
     assert resp.status_code == 200
     assert "items" in resp.json()["data"]
+
+def test_approval_flow():
+    """完整审批流: draft → submit → approve → published"""
+    # 创建
+    r = client.post("/v1/content/spots", headers=AUTH, json={"name": "审批测试", "lat": 30.0, "lng": 106.0})
+    spot_id = r.json()["data"]["id"]
+    assert r.json()["data"]["status"] == "draft"
+    # 提交审核
+    r2 = client.post(f"/v1/content/spots/{spot_id}/submit-review", headers=AUTH)
+    assert r2.json()["data"]["status"] == "pending_review"
+    # 检查待审列表
+    r3 = client.get("/v1/content/pending-review", headers=AUTH)
+    assert any(i["id"] == spot_id for i in r3.json()["data"]["items"])
+    # 审核通过
+    r4 = client.post(f"/v1/content/spots/{spot_id}/approve", headers=AUTH)
+    assert r4.json()["data"]["status"] == "published"
+    assert "approvedAt" in r4.json()["data"]
+
+def test_approval_reject():
+    """驳回流程"""
+    r = client.post("/v1/content/notices", headers=AUTH, json={"title": "驳回测试", "content": "test", "priority": "low"})
+    nid = r.json()["data"]["id"]
+    client.post(f"/v1/content/notices/{nid}/submit-review", headers=AUTH)
+    r2 = client.post(f"/v1/content/notices/{nid}/reject?reason=内容不完整", headers=AUTH)
+    assert r2.json()["data"]["status"] == "draft"
+    assert r2.json()["data"]["rejectionReason"] == "内容不完整"
