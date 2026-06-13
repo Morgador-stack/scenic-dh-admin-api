@@ -65,3 +65,112 @@ def test_runtime_status():
 def test_trace_header():
     resp = client.get("/health")
     assert "x-trace-id" in resp.headers
+
+# ── Round 2 新增 P0 测试 ──
+
+def test_auth_login():
+    resp = client.post("/v1/auth/login", json={"username": "admin", "password": "admin123"})
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert "token" in data
+    assert data["user"]["role"] == "super_admin"
+
+def test_auth_login_fail():
+    resp = client.post("/v1/auth/login", json={"username": "admin", "password": "wrong"})
+    assert resp.json()["code"] == 40100
+
+def test_auth_me():
+    resp = client.get("/v1/auth/me", headers=AUTH)
+    assert resp.status_code == 200
+
+def test_auth_users():
+    resp = client.get("/v1/auth/users", headers=AUTH)
+    assert resp.status_code == 200
+    assert len(resp.json()["data"]["items"]) >= 2
+
+def test_auth_roles():
+    resp = client.get("/v1/auth/roles", headers=AUTH)
+    assert resp.status_code == 200
+    assert len(resp.json()["data"]["items"]) >= 2
+
+def test_ops_snapshot():
+    resp = client.get("/v1/admin/ops/snapshot", headers=AUTH)
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert "visitors" in data
+    assert "alerts" in data
+    assert "todos" in data
+
+def test_content_create_spot():
+    resp = client.post("/v1/content/spots", headers=AUTH, json={
+        "name": "测试景点", "lat": 29.5, "lng": 106.5, "description": "测试"
+    })
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["status"] == "draft"
+    assert data["id"].startswith("SPOT-")
+
+def test_content_list_spots():
+    resp = client.get("/v1/content/spots", headers=AUTH)
+    assert resp.status_code == 200
+    assert len(resp.json()["data"]["items"]) >= 1
+
+def test_content_publish_spot():
+    # create first
+    r = client.post("/v1/content/spots", headers=AUTH, json={
+        "name": "发布测试", "lat": 29.6, "lng": 106.6
+    })
+    spot_id = r.json()["data"]["id"]
+    resp = client.post(f"/v1/content/spots/{spot_id}/publish", headers=AUTH)
+    assert resp.status_code == 200
+    assert resp.json()["data"]["status"] == "published"
+
+def test_content_withdraw_spot():
+    r = client.post("/v1/content/spots", headers=AUTH, json={
+        "name": "撤回测试", "lat": 29.7, "lng": 106.7
+    })
+    spot_id = r.json()["data"]["id"]
+    client.post(f"/v1/content/spots/{spot_id}/publish", headers=AUTH)
+    resp = client.post(f"/v1/content/spots/{spot_id}/withdraw", headers=AUTH)
+    assert resp.status_code == 200
+    assert resp.json()["data"]["status"] == "draft"
+
+def test_content_notice_create_and_publish():
+    resp = client.post("/v1/content/notices", headers=AUTH, json={
+        "title": "闭园通知", "content": "6月15日闭园维护", "priority": "high"
+    })
+    nid = resp.json()["data"]["id"]
+    resp2 = client.post(f"/v1/content/notices/{nid}/publish", headers=AUTH)
+    assert resp2.json()["data"]["status"] == "published"
+
+def test_content_event_create():
+    resp = client.post("/v1/content/events", headers=AUTH, json={
+        "name": "灯光秀", "time": "19:30", "location": "朝天门", "capacity": 200
+    })
+    assert resp.status_code == 200
+    assert resp.json()["data"]["status"] == "draft"
+
+def test_content_ticket_product():
+    resp = client.post("/v1/content/ticket-products", headers=AUTH, json={
+        "name": "VIP票", "price": 100.0, "applicableCrowd": "成人", "officialUrl": "https://buy.example.com/vip"
+    })
+    assert resp.status_code == 200
+    resp2 = client.get("/v1/content/ticket-products", headers=AUTH)
+    assert len(resp2.json()["data"]["items"]) >= 1
+
+def test_config_get():
+    resp = client.get("/v1/admin/config", headers=AUTH)
+    assert resp.status_code == 200
+    assert "featureFlags" in resp.json()["data"]
+
+def test_config_feature_flags():
+    resp = client.patch("/v1/admin/config/feature-flags", headers=AUTH, json={
+        "flags": {"voiceGuide": True}
+    })
+    assert resp.status_code == 200
+    assert resp.json()["data"]["voiceGuide"] == True
+
+def test_work_orders_admin():
+    resp = client.get("/v1/admin/work-orders", headers=AUTH)
+    assert resp.status_code == 200
+    assert "items" in resp.json()["data"]
