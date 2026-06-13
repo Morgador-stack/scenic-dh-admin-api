@@ -31,7 +31,7 @@ def get_ops_snapshot(request: Request):
             "activeResources": 2,
             "totalWaiting": 23,
             "avgWaitMinutes": 15,
-            "alerts": ["洪崖洞观景台等待时间超过 20 分钟"],
+            "alerts": ["灵山大佛等待时间超过 20 分钟"],
         },
         "events": {
             "activeToday": 3,
@@ -48,7 +48,7 @@ def get_ops_snapshot(request: Request):
             "overdueSLA": 2,
         },
         "alerts": [
-            {"level": "warning", "message": "洪崖洞观景台排队超 20 分钟", "timestamp": now},
+            {"level": "warning", "message": "灵山大佛排队超 20 分钟", "timestamp": now},
             {"level": "info", "message": "夜景灯光秀今晚 19:30 场次已满", "timestamp": now},
         ],
         "todos": [
