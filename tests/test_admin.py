@@ -215,3 +215,26 @@ def test_content_invalid_coordinates():
         "name": "无效坐标", "lat": 999.0, "lng": 0
     })
     assert resp.status_code == 422
+
+def test_login_then_access():
+    """登录获取token后能用该token访问受保护接口"""
+    # 登录
+    r = client.post("/v1/auth/login", json={"username": "admin", "password": "admin123"})
+    assert r.status_code == 200
+    token = r.json()["data"]["token"]
+    # 用动态token访问受保护接口
+    resp = client.get("/v1/admin/config", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    assert resp.json()["code"] == 0
+
+def test_dynamic_token_expiry():
+    """过期token被拒绝（手动篡改时间）"""
+    r = client.post("/v1/auth/login", json={"username": "admin", "password": "admin123"})
+    token = r.json()["data"]["token"]
+    # 直接篡改 token 存储，模拟过期
+    from app.auth import _TOKENS
+    for t in list(_TOKENS.keys()):
+        if t == token:
+            _TOKENS[t]["expiresAt"] = "2020-01-01T00:00:00Z"
+    resp = client.get("/v1/admin/config", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 401
